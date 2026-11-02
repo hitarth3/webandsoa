@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service-metrics
+  namespace: lab8
+spec:
+  clusterIP: None
+  selector:
+    app: user-service
+  ports:
+  - port: 3001
+    targetPort: http

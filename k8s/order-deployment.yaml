@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: lab8
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+        lab: lab8
+    spec:
+      containers:
+      - name: order-service
+        image: order-service:lab8
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 3003
+        envFrom:
+        - configMapRef:
+            name: lab8-config
+        env:
+        - name: PORT
+          value: '3003'
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: atlas
+              key: order-service
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 40

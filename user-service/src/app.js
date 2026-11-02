@@ -4,6 +4,8 @@ const User = require('./models/User');
 const Counter = require('./models/Counter');
 
 const app = express();
+  require('./metrics')(app, 'user-service');
+app.get('/ready', (_req, res) => { const ready = require('mongoose').connection.readyState === 1; res.status(ready ? 200 : 503).json({ready}); });
 app.use(cors());
 app.use(express.json());
 

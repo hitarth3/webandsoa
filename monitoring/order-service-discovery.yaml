@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service-metrics
+  namespace: lab8
+spec:
+  clusterIP: None
+  selector:
+    app: order-service
+  ports:
+  - port: 3003
+    targetPort: http

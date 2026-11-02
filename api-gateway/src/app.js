@@ -14,6 +14,7 @@ const { createServiceProxy } = require('./proxy');
 function createApp() {
   const config = loadConfig();
   const app = express();
+  require('./metrics')(app, 'api-gateway');
 
   // Enable Cross-Origin Resource Sharing
   app.use(cors());
