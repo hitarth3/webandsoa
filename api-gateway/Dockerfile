@@ -2,13 +2,13 @@
 # CampusConnect API Gateway Dockerfile (Port 8080)
 # Supports both root repository context (Render/Cloud) and local compose builds
 # ==============================================================================
-FROM node:20-slim
+FROM node:22-slim
 
 WORKDIR /app
 
 # Copy application package manifests from api-gateway directory
 COPY api-gateway/package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 # Copy application source code from api-gateway
 COPY api-gateway/ .

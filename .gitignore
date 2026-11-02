@@ -33,3 +33,7 @@ student-android/.kotlin/
 # OS files
 .DS_Store
 Thumbs.db
+
+atlas.env
+grafana.env
+*kubeconfig*

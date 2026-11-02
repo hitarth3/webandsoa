@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: lab8
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+        lab: lab8
+    spec:
+      containers:
+      - name: user-service
+        image: user-service:lab8
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 3001
+        envFrom:
+        - configMapRef:
+            name: lab8-config
+        env:
+        - name: PORT
+          value: '3001'
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: atlas
+              key: user-service
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 40

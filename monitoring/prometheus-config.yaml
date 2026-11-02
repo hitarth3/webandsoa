@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: lab8
+data:
+  prometheus.yml: "global:\n  scrape_interval: 15s\nscrape_configs:\n- dns_sd_configs:\n\
+    \  - names:\n    - api-gateway-metrics.lab8.svc.cluster.local\n    port: 8080\n\
+    \    type: A\n  job_name: api-gateway\n- dns_sd_configs:\n  - names:\n    - user-service-metrics.lab8.svc.cluster.local\n\
+    \    port: 3001\n    type: A\n  job_name: user-service\n- dns_sd_configs:\n  -\
+    \ names:\n    - product-service-metrics.lab8.svc.cluster.local\n    port: 3002\n\
+    \    type: A\n  job_name: product-service\n- dns_sd_configs:\n  - names:\n   \
+    \ - order-service-metrics.lab8.svc.cluster.local\n    port: 3003\n    type: A\n\
+    \  job_name: order-service\n"

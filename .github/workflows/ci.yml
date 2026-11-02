@@ -1,0 +1,66 @@
+name: Lab 8 CI and delivery
+on:
+  push:
+    branches: [main, lab8-completion]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api-gateway, user-service, product-service, order-service]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+        working-directory: ${{ matrix.service }}
+      - run: node --test tests/metrics.test.js
+      - run: node --test tests/http.test.js
+        env:
+          TEST_SERVICE: ${{ matrix.service }}
+      - name: Build versioned image
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: |
+          context="$SERVICE"
+          if [ "$SERVICE" = api-gateway ]; then context=.; fi
+          docker build -f "$SERVICE/Dockerfile" -t "ghcr.io/${GITHUB_REPOSITORY,,}/$SERVICE:$GITHUB_SHA" "$context"
+      - name: Publish image
+        if: github.event_name != 'pull_request'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SERVICE: ${{ matrix.service }}
+        run: |
+          echo "$TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker push "ghcr.io/${GITHUB_REPOSITORY,,}/$SERVICE:$GITHUB_SHA"
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: lab8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+      - name: Deploy exact revision
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        run: |
+          umask 077
+          export KUBECONFIG="$RUNNER_TEMP/kubeconfig"
+          printf '%s' "$KUBE_CONFIG" > "$KUBECONFIG"
+          trap 'rm -f "$KUBECONFIG"' EXIT
+          kubectl apply -f k8s/namespace.yaml
+          kubectl get secret atlas -n lab8
+          for s in api-gateway user-service product-service order-service; do
+            sed -i "s|image: $s:lab8|image: ghcr.io/${GITHUB_REPOSITORY,,}/$s:$GITHUB_SHA|" k8s/*-deployment.yaml
+          done
+          kubectl apply -f k8s/
+          for s in api-gateway user-service product-service order-service; do kubectl rollout status deployment/$s -n lab8 --timeout=240s; done

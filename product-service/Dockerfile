@@ -1,13 +1,13 @@
 # ==============================================================================
 # Lab 6: Product Service Dockerfile (Port 3002)
 # ==============================================================================
-FROM node:20-slim
+FROM node:22-slim
 
 WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 # Copy application source code
 COPY . .
